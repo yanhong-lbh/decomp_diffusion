@@ -66,7 +66,12 @@ def main():
     
     logger.log("creating model and diffusion...")
 
-    training_model_defaults = unet_model_defaults() if model_desc == 'unet_model' else model_defaults()
+    if model_desc == 'unet_model':
+        training_model_defaults = unet_model_defaults()
+    elif model_desc == 'unet_model_cls':
+        training_model_defaults = unet_model_cls_defaults()
+    else:
+        training_model_defaults = model_defaults()
     
     model_kwargs = args_to_dict(args, training_model_defaults.keys())
     model = create_diffusion_model(**model_kwargs)
@@ -103,6 +108,7 @@ def main():
         model.load_state_dict(checkpoint)
         start_epoch = parse_epoch(ckpt_path)
         print(f'resuming from {start_epoch}')
+    breakpoint()
     
     run_loop(model, gd, data, save_desc, start_epoch=start_epoch, epoch_block=args.epoch_block, num_its=args.num_its, p_uncond=p_uncond, default_im=default_im, latent_orthog=args.latent_orthog, dataset=dataset, downweight=downweight, image_size=image_size, use_dist=use_dist)
 
@@ -152,8 +158,12 @@ def create_argparser():
     defaults.update(model_defaults())
     defaults.update(diffusion_defaults())
     defaults.update(unet_model_defaults())
+    defaults.update(unet_model_cls_defaults())
     parser = argparse.ArgumentParser()
     add_dict_to_argparser(parser, defaults)
+    print("Default arguments:")
+    for key, value in defaults.items():
+        print(f"{key}: {value}")
     return parser
 
 

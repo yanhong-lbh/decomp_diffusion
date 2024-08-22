@@ -1,5 +1,5 @@
 from .diffusion.gaussian_diffusion import get_named_beta_schedule, GaussianDiffusion
-from .model.unet import UNetModel
+from .model.unet import UNetModel, UNetModelCls
 from .diffusion.respace import SpacedDiffusion
 
 def create_unet_model(
@@ -72,6 +72,77 @@ def create_unet_model(
     )
     return unet
 
+
+def create_unet_model_cls(
+        image_size=64,
+        num_channels=64, # 128, #192,
+        enc_channels=64,
+        num_res_blocks=2, # 3,
+        num_components=4, 
+        channel_mult="",
+        num_heads=1,
+        num_head_channels=64,
+        num_heads_upsample=-1,
+        attention_resolutions="32,16,8",
+        dropout=0.1,
+        # text_ctx=128,
+        # xf_width=512,
+        # xf_layers=16,
+        # xf_heads=8,
+        # xf_final_ln=True,
+        # xf_padding=True,
+        # diffusion_steps=1000,
+        # noise_schedule="squaredcos_cap_v2",
+        # timestep_respacing="",
+        use_scale_shift_norm=False, # True, # False??
+        resblock_updown=True,
+        model_desc='unet_model',
+        emb_dim=256
+        # dataset='clevr'
+    ):
+        # everything else False
+
+    if channel_mult == "":
+        if image_size == 64:
+            channel_mult = (1, 2, 3) # (1, 2, 3, 4)
+        elif image_size == 128:
+            channel_mult = (1, 2, 3, 4)
+        elif image_size < 64: # eg 35
+            channel_mult = (1, 2)
+    elif len(channel_mult) > 0: # passed in comma-delimited series of numbers
+        channel_mult = channel_mult.split(',')
+        channel_mult = [int(n) for n in channel_mult]
+        channel_mult = tuple(channel_mult)
+        print('channel_mult')
+        print(channel_mult)
+
+    attention_ds = []
+    for res in attention_resolutions.split(","):
+        attention_ds.append(image_size // int(res))
+
+    unet = UNetModelCls(
+        in_channels=3,
+        model_channels=num_channels,
+        out_channels=3, # 6,
+        num_res_blocks=num_res_blocks,
+        num_components=num_components,
+        attention_resolutions=tuple(attention_ds),
+        dropout=dropout,
+        channel_mult=channel_mult,
+        # num_classes=num_classes,
+        # use_fp16=use_fp16,
+        num_heads=num_heads,
+        num_head_channels=num_head_channels,
+        num_heads_upsample=num_heads_upsample,
+        use_scale_shift_norm=use_scale_shift_norm,
+        resblock_updown=resblock_updown,
+        encoder_channels=None,
+        image_size=image_size,
+        emb_dim=emb_dim
+        # dataset=dataset
+    )
+    return unet
+
 def unet_model_defaults():
     return dict(
         image_size=64,
@@ -101,9 +172,41 @@ def unet_model_defaults():
         # dataset='clevr'
     )
 
+
+def unet_model_cls_defaults():
+    return dict(
+        image_size=64,
+        num_channels=64, # 128, #192,
+        enc_channels=64,
+        num_res_blocks=2, # 3,
+        num_components=2, 
+        channel_mult="",
+        num_heads=1,
+        num_head_channels=64,
+        num_heads_upsample=-1,
+        attention_resolutions="32,16,8",
+        dropout=0.1,
+        # text_ctx=128,
+        # xf_width=512,
+        # xf_layers=16,
+        # xf_heads=8,
+        # xf_final_ln=True,
+        # xf_padding=True,
+        # diffusion_steps=1000,
+        # noise_schedule="squaredcos_cap_v2",
+        # timestep_respacing="",
+        use_scale_shift_norm=False, # True, # False??
+        resblock_updown=True,
+        model_desc='unet_model_cls',
+        emb_dim=256
+        # dataset='clevr'
+    )
+
 def create_diffusion_model(model_desc='unet_model', **model_kwargs):
     if model_desc == 'unet_model':
         model = create_unet_model(**model_kwargs)
+    elif model_desc == 'unet_model_cls':
+        model = create_unet_model_cls(**model_kwargs)
     return model
 
 
