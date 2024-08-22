@@ -9,6 +9,17 @@ from skimage.transform import resize as imresize
 # import tensorflow.compat.v1 as tf
 
 
+# MNIST
+
+import torchvision.transforms as transforms
+from torchvision.datasets import MNIST
+from torch.utils.data import Dataset, DataLoader
+import torch as th
+from glob import glob
+from skimage.io import imread
+from skimage.transform import resize as imresize
+
+
 def get_dataset(dataset_type, base_dir, start_index=0, num_images=None, resolution=64):
     """Get dataset class"""
     DATASET_MAPPING = dict(
@@ -21,10 +32,12 @@ def get_dataset(dataset_type, base_dir, start_index=0, num_images=None, resoluti
         comb_kitti=CombinedKitti,
         tetris=Tetrominoes,
         anime=Anime,
-        faces=Faces
+        faces=Faces,
+        mnist=MNISTDataset
     )
     if dataset_type in DATASET_MAPPING:
         dataset = DATASET_MAPPING[dataset_type](base_dir, start_index=start_index, num_images=num_images, resolution=resolution)
+        print(len(dataset))
     else:
         raise NotImplementedError(f'dataset: {dataset_type} is not implemented.')
     return dataset
@@ -52,10 +65,30 @@ class Data(Dataset):
         im = th.Tensor(im).permute(2, 0, 1)
         return im, index
 
+class MNISTDataset(Dataset):
+    def __init__(self, base_dir, resolution=64, start_index=0, num_images=None):
+        transform = transforms.Compose([
+            transforms.Resize((resolution, resolution)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,))
+        ])
+        self.mnist_data = MNIST(base_dir, train=True, download=True, transform=transform)
+        self.start_index = start_index
+        self.num_images = num_images
+        if num_images is not None:
+            self.mnist_data.data = self.mnist_data.data[start_index:start_index + num_images]
+            self.mnist_data.targets = self.mnist_data.targets[start_index:start_index + num_images]
+
+    def __len__(self):
+        return len(self.mnist_data) if self.num_images is None else self.num_images
+
+    def __getitem__(self, index):
+        img, label = self.mnist_data[index]
+        return img, index
 
 class Clevr(Data):
     def __init__(self, base_dir, resolution=64, start_index=0, num_images=None):
-        super().__init__(base_dir, path='images_clevr/*.png', resolution=resolution, start_index=start_index, num_images=num_images)
+        super().__init__(base_dir, path='/images_clevr/*.png', resolution=resolution, start_index=start_index, num_images=num_images)
 
 
 class ClevrToy(Data):
@@ -205,6 +238,7 @@ def load_data(
 ):  
 
     dataset = get_dataset(dataset_type, base_dir=base_dir, num_images=num_images, resolution=image_size)
+
     if deterministic:
         loader = DataLoader(
             dataset, batch_size=batch_size, shuffle=False, num_workers=8, drop_last=True

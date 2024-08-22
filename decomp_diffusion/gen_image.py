@@ -11,7 +11,7 @@ th.manual_seed(0)
 np.random.seed(0)
 
 
-def get_im(im_path='clevr_im_10.png', resolution=64):
+def get_im(im_path=None, resolution=64):
     im = imread(im_path)
     if 'kitti' in im_path: # kitti, vkitti
         im = im[:, 433:808, :]
@@ -218,7 +218,7 @@ def get_model_fn(model, gd, batch_size=1, guidance_scale=10.0, device='cuda'):
     return model_fn
 
 
-def get_gen_images(model, gd, sample_method='ddim', im_path='clevr_im_10.png', latent=None, batch_size=1, image_size=64, device='cuda', model_kwargs=None, num_images=4, desc='', save_dir='', free=False, guidance_scale=10.0, dataset='clevr', separate=False):
+def get_gen_images(model, gd, sample_method='ddim', im_path='sample_images/clevr_im_10.png', latent=None, batch_size=1, image_size=64, device='cuda', model_kwargs=None, num_images=4, desc='', save_dir='', free=False, guidance_scale=10.0, dataset='clevr', separate=False):
     orig_im = get_im(im_path=im_path, resolution=image_size)
     if latent == None:
         latent = model.encode_latent(orig_im)

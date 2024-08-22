@@ -4,6 +4,7 @@ import os
 import numpy as np
 import copy
 from ema_pytorch import EMA
+from tqdm import tqdm
 
 from .model_and_diffusion_util import *
 from .gen_image import get_gen_images
@@ -50,7 +51,7 @@ def run_loop(model, gd, data, save_desc, lr=1e-3, start_epoch=0, epoch_block=100
     print(f'Saving model ckpts to {save_dir}')
 
     free = p_uncond > 0
-    for epoch in range(start_epoch, start_epoch + total_epochs):
+    for epoch in tqdm(range(start_epoch, start_epoch + total_epochs), desc="Training Epochs"):
         batch, cond = next(data)
         batch = batch.to(device)
         model_kwargs = {}
@@ -64,6 +65,7 @@ def run_loop(model, gd, data, save_desc, lr=1e-3, start_epoch=0, epoch_block=100
             keep_mask = rand_values >= p_uncond
             null_emb = th.zeros(b, model.latent_dim_expand).to(device)
             latent_emb = model.encode_latent(batch)
+            
             emb = th.where(
                 keep_mask,
                 latent_emb,

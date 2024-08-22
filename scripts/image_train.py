@@ -21,7 +21,8 @@ th.manual_seed(0)
 np.random.seed(0)
 
 DEFAULT_IM = dict(
-    clevr='clevr_im_10.png',
+    clevr='sample_images/clevr_im_10.png',
+    mnist='sample_images/mnist_4.png',
     clevr_toy='im_8_clevr_toy.png',
     celebahq='im_19_celebahq.jpg',
     falcor3d='im_10_falcor3d.png',
@@ -35,7 +36,6 @@ DEFAULT_IM = dict(
 
 def main():
     args = create_argparser().parse_args()
-    dist_util.setup_dist()
 
     log_folder = args.log_folder
     model_desc = args.model_desc
@@ -46,6 +46,9 @@ def main():
     image_size = args.image_size
     use_dist = args.use_dist
     # log args
+
+    if use_dist:
+        dist_util.setup_dist()
 
     predict_desc = 'xstart' if predict_xstart else 'eps'
     save_desc = f'{model_desc}_{dataset}_{num_images}_{predict_desc}_emb_{args.emb_dim}'
@@ -67,7 +70,10 @@ def main():
     
     model_kwargs = args_to_dict(args, training_model_defaults.keys())
     model = create_diffusion_model(**model_kwargs)
-    model.to(dist_util.dev())
+    if use_dist:
+        model.to(dist_util.dev())
+    else:
+        model.to('cuda')
 
     diffusion_kwargs = args_to_dict(args, diffusion_defaults().keys())
     gd = create_gaussian_diffusion(**diffusion_kwargs)
