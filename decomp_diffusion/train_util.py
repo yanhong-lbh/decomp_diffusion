@@ -26,9 +26,8 @@ def params_to_state_dict(target_params, model):
         state_dict[name] = target_params[i]
     return state_dict
 
-def run_loop(model, gd, data, save_desc, lr=1e-3, start_epoch=0, epoch_block=10000, num_its=20, p_uncond=0.0, default_im='im_10.png', ddim_gd=None, latent_orthog=False, ema_rate=0.9999, dataset='clevr', downweight=False, image_size=64, use_dist=False):
+def run_loop(model, gd, data, save_desc, lr=1e-3, start_epoch=0, epoch_block=10000, num_its=1000, p_uncond=0.0, default_im='im_10.png', ddim_gd=None, latent_orthog=False, ema_rate=0.9999, dataset='clevr', downweight=False, image_size=64, use_dist=False):
 
-    breakpoint()
     if use_dist: # distributed training
         from .util.dist_util import dev
         device = dev()
@@ -76,8 +75,6 @@ def run_loop(model, gd, data, save_desc, lr=1e-3, start_epoch=0, epoch_block=100
             model_kwargs = dict(latent=emb)
 
         t = uniform_sample_timesteps(gd.num_timesteps, len(batch)).to(device)
-
-        breakpoint()
 
         loss = gd.training_losses(model, batch, t, model_kwargs=model_kwargs, latent_orthog=latent_orthog, downweight=downweight)
         loss = loss.mean() 

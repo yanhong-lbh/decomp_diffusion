@@ -179,7 +179,7 @@ def unet_model_cls_defaults():
         num_channels=64, # 128, #192,
         enc_channels=64,
         num_res_blocks=2, # 3,
-        num_components=2, 
+        num_components=4, 
         channel_mult="",
         num_heads=1,
         num_head_channels=64,

@@ -931,8 +931,9 @@ class UNetModelCls(nn.Module):
         
     def forward(self, x, t, x_start=None, latent=None, latent_index=None):
         assert x_start != None or latent != None, "one of x_start and latent should be provided (precedence to latent)"
-        if x_start != None:
-            latent = self.encode_latent(x_start)
+
+        # before, take clean images, now take noisy images
+        latent = self.encode_latent(x)
 
         time_emb = self.time_embed(timestep_embedding(t, self.model_channels)) 
         

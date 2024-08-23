@@ -45,13 +45,15 @@ def main():
     downweight = args.downweight
     image_size = args.image_size
     use_dist = args.use_dist
+    num_components = args.num_components
+
     # log args
 
     if use_dist:
         dist_util.setup_dist()
 
     predict_desc = 'xstart' if predict_xstart else 'eps'
-    save_desc = f'{model_desc}_{dataset}_{num_images}_{predict_desc}_emb_{args.emb_dim}'
+    save_desc = f'{model_desc}_{dataset}_{num_images}_{predict_desc}_emb_{args.emb_dim}_n{num_components}'
     p_uncond = args.p_uncond
     if p_uncond > 0:
         save_desc += '_free'
@@ -74,6 +76,7 @@ def main():
         training_model_defaults = model_defaults()
     
     model_kwargs = args_to_dict(args, training_model_defaults.keys())
+
     model = create_diffusion_model(**model_kwargs)
     if use_dist:
         model.to(dist_util.dev())
@@ -108,7 +111,6 @@ def main():
         model.load_state_dict(checkpoint)
         start_epoch = parse_epoch(ckpt_path)
         print(f'resuming from {start_epoch}')
-    breakpoint()
     
     run_loop(model, gd, data, save_desc, start_epoch=start_epoch, epoch_block=args.epoch_block, num_its=args.num_its, p_uncond=p_uncond, default_im=default_im, latent_orthog=args.latent_orthog, dataset=dataset, downweight=downweight, image_size=image_size, use_dist=use_dist)
 
@@ -133,7 +135,7 @@ def training_defaults():
         extra_desc='',
         downweight=False,
         epoch_block=10000,
-        num_its=20,
+        num_its=200,
         use_dist=True # default set up dist training
     )
 
@@ -157,8 +159,10 @@ def create_argparser():
     defaults.update(training_defaults())
     defaults.update(model_defaults())
     defaults.update(diffusion_defaults())
+    # if defaults['model_desc'] == 'unet_model':
     defaults.update(unet_model_defaults())
-    defaults.update(unet_model_cls_defaults())
+    # elif defaults['model_desc'] == 'unet_model_cls':
+    #     defaults.update(unet_model_cls_defaults())
     parser = argparse.ArgumentParser()
     add_dict_to_argparser(parser, defaults)
     print("Default arguments:")
