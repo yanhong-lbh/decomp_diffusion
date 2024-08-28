@@ -16,13 +16,15 @@ from decomp_diffusion.train_util import run_loop
 from decomp_diffusion.diffusion.gaussian_diffusion import *
 from decomp_diffusion.model_and_diffusion_util import *
 
+from global_states import global_state
+
 # fix randomness
 th.manual_seed(0)
 np.random.seed(0)
 
 DEFAULT_IM = dict(
     clevr='sample_images/clevr_im_10.png',
-    mnist='sample_images/mnist_4.png',
+    mnist='sample_images/mnist_digit_4.png',
     clevr_toy='im_8_clevr_toy.png',
     celebahq='im_19_celebahq.jpg',
     falcor3d='im_10_falcor3d.png',
@@ -46,6 +48,7 @@ def main():
     image_size = args.image_size
     use_dist = args.use_dist
     num_components = args.num_components
+    global_state.set_num_components(num_components)
 
     # log args
 
@@ -136,7 +139,7 @@ def training_defaults():
         downweight=False,
         epoch_block=10000,
         num_its=200,
-        use_dist=True # default set up dist training
+        use_dist=True, # default set up dist training
     )
 
 def create_argparser():
@@ -154,8 +157,10 @@ def create_argparser():
         resume_checkpoint="",
         use_fp16=False,
         fp16_scale_growth=1e-3,
-        use_ddp=True,
+        use_ddp=True
     )
+
+    defaults.update()
     defaults.update(training_defaults())
     defaults.update(model_defaults())
     defaults.update(diffusion_defaults())

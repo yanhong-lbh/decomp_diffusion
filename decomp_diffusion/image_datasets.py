@@ -65,26 +65,38 @@ class Data(Dataset):
         im = th.Tensor(im).permute(2, 0, 1)
         return im, index
 
+from torch.utils.data import Dataset
+from torchvision.datasets import MNIST
+from torchvision import transforms
+
 class MNISTDataset(Dataset):
     def __init__(self, base_dir, resolution=64, start_index=0, num_images=None):
         transform = transforms.Compose([
             transforms.Resize((resolution, resolution)),
+            transforms.Grayscale(num_output_channels=3),  # Ensure 3 channels like in the `Data` class
             transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,))
+            transforms.Normalize((0.5,), (0.5,))  # Normalize the same way as `Data` class
         ])
         self.mnist_data = MNIST(base_dir, train=True, download=True, transform=transform)
-        self.start_index = start_index
-        self.num_images = num_images
+        
+        # Filter out only images with labels 3 and 4
+        indices = (self.mnist_data.targets == 3) | (self.mnist_data.targets == 4)
+        self.mnist_data.data = self.mnist_data.data[indices]
+        self.mnist_data.targets = self.mnist_data.targets[indices]
+
+        # Apply start_index and num_images filtering
         if num_images is not None:
             self.mnist_data.data = self.mnist_data.data[start_index:start_index + num_images]
             self.mnist_data.targets = self.mnist_data.targets[start_index:start_index + num_images]
 
     def __len__(self):
-        return len(self.mnist_data) if self.num_images is None else self.num_images
+        return len(self.mnist_data)
 
     def __getitem__(self, index):
         img, label = self.mnist_data[index]
+        # The Data class returns image tensor and index, we'll do the same
         return img, index
+
 
 class Clevr(Data):
     def __init__(self, base_dir, resolution=64, start_index=0, num_images=None):

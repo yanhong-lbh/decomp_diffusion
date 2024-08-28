@@ -1,13 +1,14 @@
 from .diffusion.gaussian_diffusion import get_named_beta_schedule, GaussianDiffusion
 from .model.unet import UNetModel, UNetModelCls
 from .diffusion.respace import SpacedDiffusion
+from global_states import global_state
 
 def create_unet_model(
         image_size=64,
         num_channels=64, # 128, #192,
         enc_channels=64,
         num_res_blocks=2, # 3,
-        num_components=4, 
+        num_components=global_state.get_num_components(), 
         channel_mult="",
         num_heads=1,
         num_head_channels=64,
@@ -78,7 +79,7 @@ def create_unet_model_cls(
         num_channels=64, # 128, #192,
         enc_channels=64,
         num_res_blocks=2, # 3,
-        num_components=4, 
+        num_components=global_state.get_num_components(), 
         channel_mult="",
         num_heads=1,
         num_head_channels=64,
@@ -149,7 +150,7 @@ def unet_model_defaults():
         num_channels=64, # 128, #192,
         enc_channels=64,
         num_res_blocks=2, # 3,
-        num_components=4, 
+        num_components=global_state.get_num_components(), 
         channel_mult="",
         num_heads=1,
         num_head_channels=64,
@@ -179,7 +180,7 @@ def unet_model_cls_defaults():
         num_channels=64, # 128, #192,
         enc_channels=64,
         num_res_blocks=2, # 3,
-        num_components=4, 
+        num_components=global_state.get_num_components(), 
         channel_mult="",
         num_heads=1,
         num_head_channels=64,
@@ -232,7 +233,7 @@ def model_defaults():
         in_channels=3,
         filter_dim=16,
         emb_dim=128,
-        num_components=4,
+        num_components=global_state.get_num_components(),
         model_desc='decomp_diffusion',
         image_size=64 # added
     )
