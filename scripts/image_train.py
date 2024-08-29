@@ -48,6 +48,7 @@ def main():
     image_size = args.image_size
     use_dist = args.use_dist
     num_components = args.num_components
+    num_run = args.num_run
     global_state.set_num_components(num_components)
 
     # log args
@@ -56,7 +57,7 @@ def main():
         dist_util.setup_dist()
 
     predict_desc = 'xstart' if predict_xstart else 'eps'
-    save_desc = f'{model_desc}_{dataset}_{num_images}_{predict_desc}_emb_{args.emb_dim}_n{num_components}'
+    save_desc = f'{model_desc}_{dataset}_{num_images}_{predict_desc}_emb_{args.emb_dim}_n{num_components}_v{num_run}'
     p_uncond = args.p_uncond
     if p_uncond > 0:
         save_desc += '_free'

@@ -93,8 +93,13 @@ def run_loop(model, gd, data, save_desc, lr=1e-3, start_epoch=0, epoch_block=100
         imgs_save_dir = f'gen_imgs_{save_desc}'
         if epoch % epoch_block == 0:
             print(f'img at {epoch} epochs')
-            print(f'Saving images to {imgs_save_dir}')
-            get_gen_images(model, ddim_gd, im_path=default_im, desc=str(epoch), save_dir=imgs_save_dir, free=free, dataset=dataset, sample_method='ddim', num_images=1, image_size=image_size)
+            print(f'Saving noise to {imgs_save_dir}')
+
+            with th.no_grad():
+                o = gd.training_losses(model, batch, t, model_kwargs=model_kwargs, latent_orthog=latent_orthog, downweight=downweight, save_noise=True)
+                th.save(o, os.path.join(imgs_save_dir, f'noise_{epoch}.pt'))
+
+            #get_gen_images(model, ddim_gd, im_path=default_im, desc=str(epoch), save_dir=imgs_save_dir, free=free, dataset=dataset, sample_method='ddim', num_images=1, image_size=image_size)
 
             print('loss:')
             print(loss)

@@ -49,6 +49,9 @@ if __name__=='__main__':
     parser.add_argument('--combine_method', default=None) # slice, add, or cross-dataset
     parser.add_argument('--indices', type=str, default=None) # comma-delimited list
 
+    # added 
+    parser.add_argument('--num_timesteps', type=int, default=1000)
+
     args = parser.parse_args()
 
     has_cuda = th.cuda.is_available()
@@ -72,7 +75,12 @@ if __name__=='__main__':
     data_dir = args.data_dir
 
     model_desc = args.model_desc
-    training_model_defaults = unet_model_defaults() if model_desc == 'unet_model' else model_defaults()
+    if model_desc == 'unet_model':
+        training_model_defaults = unet_model_defaults()
+    elif model_desc == 'unet_model_cls':
+        training_model_defaults = unet_model_defaults()
+    else:
+        training_model_defaults = model_defaults()
     model_kwargs = args_to_dict(args, training_model_defaults.keys())
     model = create_diffusion_model(**model_kwargs)
     if 'ema' in ckpt_path: # need EMA wrapper
@@ -82,7 +90,7 @@ if __name__=='__main__':
     diffusion_kwargs = args_to_dict(args, diffusion_defaults().keys())
     gd = create_gaussian_diffusion(**diffusion_kwargs)
 
-    num_images = args.num_images        
+    num_images = args.num_images
 
     # if has_cuda:
     #     model.convert_to_fp16()
@@ -97,7 +105,7 @@ if __name__=='__main__':
     step_size = 100 if 'kitti' in dataset or 'falcor' in dataset else 1 # kitti, vkitti have very similar adjacent imgs
     if sample_method == 'ddim':
         # use respaced diffusion steps
-        desired_timesteps = 50 
+        desired_timesteps = 50
         num_timesteps = diffusion_kwargs['steps']
 
         spacing = num_timesteps // desired_timesteps
@@ -136,7 +144,7 @@ if __name__=='__main__':
                     combine_func(model, gd, im1=data[i], im2=data2[j], image_size=image_size, indices=indices, sample_method=sample_method, save_dir=save_dir, dataset=dataset, num_images=1, desc=f'comb{i}x{j}')
 
     elif combine_method is None:
-        get_gen_images(model, gd, sample_method=sample_method, im_path=args.im_path, image_size=image_size, device=device, save_dir=save_dir, guidance_scale=guidance_scale, free=free, dataset=dataset, num_images=num_images, separate=separate)
+        get_gen_images(model, gd, sample_method=sample_method, im_path=args.im_path, image_size=image_size, device=device, save_dir=save_dir, guidance_scale=guidance_scale, free=free, dataset=dataset, num_images=num_images, separate=separate, model_kwargs=model_kwargs)
     else:
         if combine_method == 'slice':
             combine_func = combine_components_slice

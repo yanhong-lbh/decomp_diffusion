@@ -235,7 +235,8 @@ def model_defaults():
         emb_dim=128,
         num_components=global_state.get_num_components(),
         model_desc='decomp_diffusion',
-        image_size=64 # added
+        image_size=64, # added
+        num_run=1
     )
 
 def diffusion_defaults():

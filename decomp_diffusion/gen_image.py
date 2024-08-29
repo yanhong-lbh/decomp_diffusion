@@ -106,6 +106,62 @@ def gen_image_and_components(model, gd, separate=False, num_components=4, sample
         save_image(grid, os.path.join(save_dir, f'{dataset}_{image_size}{sep}{desc}_row{i}.png'))
 
 
+def gen_image_and_components_cls(model, gd, noises, separate=False, num_components=4, sample_method='ddim', im_path='clevr_im_10.png', batch_size=1, image_size=64, device='cuda', model_kwargs=None, num_images=4, desc='', save_dir='', dataset='clevr'):
+    """Generate row of orig image, individual components, and reconstructed image"""
+    sep = '_' if len(desc) > 0 else ''
+    # orig_img = get_im(im_path, resolution=image_size)
+    # if separate:
+    #     save_image(orig_img.cpu(), os.path.join(save_dir, f'{dataset}_{image_size}{sep}{desc}_orig.png')) # save indiv orig
+
+    if len(save_dir) > 0:
+        os.makedirs(save_dir, exist_ok=True)
+    assert sample_method in ('ddpm', 'ddim')
+    sample_loop_func = gd.p_sample_loop if sample_method == 'ddpm' else gd.ddim_sample_loop
+    if sample_method == 'ddim':
+        model = gd._wrap_model(model)
+
+    # generate imgs
+    for i in range(num_images):
+        all_samples = [orig_img]
+        # individual components
+        for j in range(num_components):
+            model_kwargs['latent_index'] = j
+            sample = sample_loop_func(
+                model,
+                (batch_size, 3, image_size, image_size),
+                device=device,
+                clip_denoised=True,
+                progress=True,
+                model_kwargs=model_kwargs,
+                cond_fn=None,
+            )[:batch_size]
+
+            # save indiv comp
+            if separate:
+                save_image(sample.cpu(), os.path.join(save_dir, f'{dataset}_{image_size}{sep}{desc}_{i}_{j}.png'))
+            all_samples.append(sample)
+        # reconstruction
+        model_kwargs['latent_index'] = None
+        sample = sample_loop_func(
+            model,
+            (batch_size, 3, image_size, image_size),
+            device=device,
+            clip_denoised=True,
+            progress=True,
+            model_kwargs=model_kwargs,
+            cond_fn=None,
+        )[:batch_size]
+        # save indiv reconstruction
+        if separate:
+            save_image(sample.cpu(), os.path.join(save_dir, f'{dataset}_{image_size}{sep}{desc}_{i}.png'))
+        all_samples.append(sample)
+
+        samples = th.cat(all_samples, dim=0).cpu()   
+        grid = make_grid(samples, nrow=samples.shape[0], padding=0)
+        # save row
+        save_image(grid, os.path.join(save_dir, f'{dataset}_{image_size}{sep}{desc}_row{i}.png'))
+
+
 def gen_image_and_components_progressive(model, gd, steps=10, separate=False, num_components=4, sample_method='ddpm', im_path='clevr_im_10.png', batch_size=1, image_size=64, device='cuda', model_kwargs=None, desc='', save_dir='', dataset='clevr'):
     """Generate row of orig image, individual components, and reconstructed image"""
     sep = '_' if len(desc) > 0 else ''
@@ -218,10 +274,29 @@ def get_model_fn(model, gd, batch_size=1, guidance_scale=10.0, device='cuda'):
     return model_fn
 
 
-def get_gen_images(model, gd, sample_method='ddim', im_path='sample_images/clevr_im_10.png', latent=None, batch_size=1, image_size=64, device='cuda', model_kwargs=None, num_images=4, desc='', save_dir='', free=False, guidance_scale=10.0, dataset='clevr', separate=False):
-    orig_im = get_im(im_path=im_path, resolution=image_size)
+def get_gen_images(model, gd, sample_method='ddim', im_path='sample_images/clevr_im_10.png', latent=None, batch_size=1, image_size=64, device='cuda', model_kwargs=None, num_images=4, desc='', save_dir='', free=False, guidance_scale=10.0, dataset='clevr', separate=False, viz_inter=False):
+    if model_kwargs['model_desc'] == 'unet_model':
+        orig_im = get_im(im_path=im_path, resolution=image_size)
+        input_im = orig_im
+    elif model_kwargs['model_desc'] == 'unet_model_cls':
+        with th.no_grad():
+            orig_im = get_im(im_path=im_path, resolution=image_size)
+            input_im = orig_im
+            # breakpoint()
+            # t = 11
+            # noise = th.randn_like(orig_im)
+            # x_t = gd.q_sample(orig_im, th.tensor(t).to('cuda'), noise=noise)
+            # input_im = x_t
+            # add noises to orig_im
+            # betas = gd.betas
+            # timestep = 11
+            # beta_timestep = betas[timestep - 1]
+            # std_dev = th.sqrt(th.tensor(beta_timestep))
+            # noise = th.randn_like(orig_im) * std_dev
+            # input_im = orig_im + noise
+        
     if latent == None:
-        latent = model.encode_latent(orig_im)
+        latent = model.encode_latent(input_im)
         model_kwargs = {'latent': latent}
 
     if device == None:
@@ -229,7 +304,10 @@ def get_gen_images(model, gd, sample_method='ddim', im_path='sample_images/clevr
 
     # use classifier free
     gen_model = model if not free else get_model_fn(model, gd, batch_size=batch_size, guidance_scale=guidance_scale)
-    
+
+    # if viz_inter:
+    #     gen_image_and_components_cls(gen_model, gd, separate=separate, num_components=model.num_components, sample_method=sample_method, im_path=im_path, batch_size=batch_size, image_size=image_size, device=device, model_kwargs=model_kwargs, num_images=num_images, desc=desc, save_dir=save_dir, dataset=dataset)
+    # else:
     gen_image_and_components(gen_model, gd, separate=separate, num_components=model.num_components, sample_method=sample_method, im_path=im_path, batch_size=batch_size, image_size=image_size, device=device, model_kwargs=model_kwargs, num_images=num_images, desc=desc, save_dir=save_dir, dataset=dataset)
     
 

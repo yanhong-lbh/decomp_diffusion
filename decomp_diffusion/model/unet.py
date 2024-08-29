@@ -619,6 +619,7 @@ class UNetModel(nn.Module):
         
     def forward(self, x, t, x_start=None, latent=None, latent_index=None):
         assert x_start != None or latent != None, "one of x_start and latent should be provided (precedence to latent)"
+
         if x_start != None:
             latent = self.encode_latent(x_start)
 
@@ -662,7 +663,11 @@ class UNetModel(nn.Module):
         s = o.size()
         if latent_index is None:
             o = o.view(b, -1, *s[1:]).mean(dim=1)
-        return o
+        #print(t)
+        #th.save(o, f'pred_noises/latent_{latent_index}_t{int(t)}.pt')
+        # if t == 20:
+        #     breakpoint()
+        return (o, latent_index)
 
 
 
@@ -929,10 +934,11 @@ class UNetModelCls(nn.Module):
         return self.latent_encoder(x)
 
         
-    def forward(self, x, t, x_start=None, latent=None, latent_index=None):
+    def forward(self, x, t, save_noise=False, x_start=None, latent=None, latent_index=None):
         assert x_start != None or latent != None, "one of x_start and latent should be provided (precedence to latent)"
 
         # before, take clean images, now take noisy images
+        #print(latent)
         latent = self.encode_latent(x)
 
         time_emb = self.time_embed(timestep_embedding(t, self.model_channels)) 
@@ -972,7 +978,11 @@ class UNetModelCls(nn.Module):
         h = h.type(x.dtype)
         o = self.out(h)
 
+        # if save_noise:
+        #     return x_copy, o
+
         s = o.size()
         if latent_index is None:
             o = o.view(b, -1, *s[1:]).mean(dim=1)
-        return o
+
+        return (o, latent_index)

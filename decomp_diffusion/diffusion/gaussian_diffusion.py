@@ -135,7 +135,7 @@ class GaussianDiffusion:
             + _extract_into_tensor(self.sqrt_one_minus_alphas_cumprod, t, x_start.shape) * noise
         )
 
-    def training_losses(self, model, x_start, t, model_kwargs=None, noise=None, latent_orthog=False, downweight=False):
+    def training_losses(self, model, x_start, t, model_kwargs=None, noise=None, latent_orthog=False, downweight=False, save_noise=False):
         """
         Compute training losses for a single timestep.
         :param model: the model to evaluate loss on.
@@ -152,6 +152,10 @@ class GaussianDiffusion:
         if noise is None:
             noise = th.randn_like(x_start)
         x_t = self.q_sample(x_start, t, noise=noise)
+
+        if save_noise:
+            noise = model(x_t, t, save_noise=True, **model_kwargs) # no rescale timesteps
+            return noise
 
         model_output = model(x_t, t, **model_kwargs) # no rescale timesteps
 
@@ -479,6 +483,7 @@ class GaussianDiffusion:
 
         Same usage as p_sample().
         """
+
         out = self.p_mean_variance(
             model,
             x,
@@ -492,7 +497,15 @@ class GaussianDiffusion:
 
         # Usually our model outputs epsilon, but we re-derive it
         # in case we used x_start or x_prev prediction.
+
+
+        # out['extra'] is latent_index
+
+        # TODO: i think this needs to be changed, instead of x, i also needs x_k
         eps = self._predict_eps_from_xstart(x, t, out["pred_xstart"])
+        latent_index = out['extra']
+
+        th.save(eps, f'pred_noises_cls/latent_{latent_index}_t{int(t)}.pt')
 
         alpha_bar = _extract_into_tensor(self.alphas_cumprod, t, x.shape)
         alpha_bar_prev = _extract_into_tensor(self.alphas_cumprod_prev, t, x.shape)
@@ -604,6 +617,8 @@ class GaussianDiffusion:
 
         Same usage as p_sample_loop_progressive().
         """
+        th.manual_seed(0)
+        np.random.seed(0)
         if device is None:
             device = next(model.parameters()).device
         assert isinstance(shape, (tuple, list))
@@ -611,6 +626,7 @@ class GaussianDiffusion:
             img = noise
         else:
             img = th.randn(*shape, device=device)
+
         indices = list(range(self.num_timesteps))[::-1]
 
         if progress:
