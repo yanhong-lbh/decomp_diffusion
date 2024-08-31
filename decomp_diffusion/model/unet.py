@@ -981,6 +981,11 @@ class UNetModelCls(nn.Module):
         # if save_noise:
         #     return x_copy, o
 
+        if latent_index is None:
+            for latent_index in range(4):
+                o_k = o[latent_index, :, :, :].unsqueeze(0)
+                th.save(o_k, f'cls_x0/{int(t)}_l{latent_index}.pt')
+
         s = o.size()
         if latent_index is None:
             o = o.view(b, -1, *s[1:]).mean(dim=1)

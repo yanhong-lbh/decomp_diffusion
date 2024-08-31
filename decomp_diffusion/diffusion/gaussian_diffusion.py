@@ -596,7 +596,7 @@ class GaussianDiffusion:
             eta=eta,
         ):
             final = sample
-        return final["sample"]
+        return final['sample']
 
     def ddim_sample_loop_progressive(
         self,
@@ -650,6 +650,9 @@ class GaussianDiffusion:
                 )
                 yield out
                 img = out["sample"]
+                #latent_index = model_kwargs['latent_index']
+                
+                #th.save(out["pred_xstart"], f'cls_x0/{int(t)}_l{latent_index}.pt')
 
 
 

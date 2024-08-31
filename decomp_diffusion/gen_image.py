@@ -103,7 +103,7 @@ def gen_image_and_components(model, gd, separate=False, num_components=4, sample
         samples = th.cat(all_samples, dim=0).cpu()   
         grid = make_grid(samples, nrow=samples.shape[0], padding=0)
         # save row
-        save_image(grid, os.path.join(save_dir, f'{dataset}_{image_size}{sep}{desc}_row{i}.png'))
+        save_image(grid, os.path.join(save_dir, f'{dataset}_{image_size}{sep}{desc}_row{i}_x0.png'))
 
 
 def gen_image_and_components_cls(model, gd, noises, separate=False, num_components=4, sample_method='ddim', im_path='clevr_im_10.png', batch_size=1, image_size=64, device='cuda', model_kwargs=None, num_images=4, desc='', save_dir='', dataset='clevr'):
@@ -156,7 +156,7 @@ def gen_image_and_components_cls(model, gd, noises, separate=False, num_componen
             save_image(sample.cpu(), os.path.join(save_dir, f'{dataset}_{image_size}{sep}{desc}_{i}.png'))
         all_samples.append(sample)
 
-        samples = th.cat(all_samples, dim=0).cpu()   
+        samples = th.cat(all_samples, dim=0).cpu()
         grid = make_grid(samples, nrow=samples.shape[0], padding=0)
         # save row
         save_image(grid, os.path.join(save_dir, f'{dataset}_{image_size}{sep}{desc}_row{i}.png'))
